@@ -7,16 +7,60 @@
 //
 
 import UIKit
+import RealmSwift       //課題追加
+
+var g_realm: Realm!   // 課題追加
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
+    
+    // 課題追加 START
+    override init(){
+        super.init()
+        // マイグレーションの更新
+        let config = Realm.Configuration(schemaVersion: 1, migrationBlock: {migration, oldSchemaVersion in if(oldSchemaVersion < 1){}})
+        
+        Realm.Configuration.defaultConfiguration = config
+        g_realm = try! Realm()
+        
+    }
+    // 課題追加 END
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+
+        //ユーザに通信の許可を求める
+        let settings = UIUserNotificationSettings(forTypes: [UIUserNotificationType.Alert, UIUserNotificationType.Sound], categories: nil)
+        UIApplication.sharedApplication().registerUserNotificationSettings(settings)
+        
+        //通知からの起動かどうか確認する
+        if let notification = launchOptions?[UIApplicationLaunchOptionsLocalNotificationKey] as? UILocalNotification{
+            //通知領域から削除する
+            application.cancelLocalNotification(notification)
+        }
+        
         // Override point for customization after application launch.
         return true
+    }
+    
+    func application(application:UIApplication,didReceiveLocalNotification notification: UILocalNotification){
+        //アプリがフォアグランドにいる時に通知が届いた時
+        if application.applicationState == UIApplicationState.Active {
+            //アラートを表示する
+            let alertController = UIAlertController(title: "時間になりました", message: notification.alertBody, preferredStyle: .Alert)
+            let defaultAcction = UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: nil)
+            alertController.addAction(defaultAcction)
+            
+            window?.rootViewController!.presentViewController(alertController, animated: true, completion: nil)
+        } else {
+            //バックグラウンドにいる時に通知が届いた時はログに出力するだけ
+            print("\(notification.alertBody)")
+        }
+        
+        //通知領域から削除する
+        application.cancelLocalNotification(notification)
+        
     }
 
     func applicationWillResignActive(application: UIApplication) {
